@@ -52,11 +52,13 @@ bool is_updated_from_sntp()
     return is_time_fetched;
 }
 
-const std::tm& get()
+const std::tm& get(bool cache)
 {
-    std::time_t now = 0;
-    std::time(&now);
-    localtime_r(&now, &local_time);
+    if (cache) {
+        std::time_t now = 0;
+        std::time(&now);
+        localtime_r(&now, &local_time);
+    }
     return local_time;
 }
 

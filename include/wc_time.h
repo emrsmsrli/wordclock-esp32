@@ -8,8 +8,8 @@ namespace wordclock { namespace time {
 
 void update_from_sntp();
 bool is_updated_from_sntp();
-const std::tm& get();
+const std::tm& get(bool cache = true);
 
-}}
+}} //namespace wordclock::time
 
 #endif //WORDCLOCK_WC_TIME_H

@@ -22,14 +22,8 @@ String to_string(RgbColor color);
 
 namespace neopixel {
 
-constexpr uint8_t num_pixels = 116;
-constexpr uint8_t unused_pixel_idx = 89;
-constexpr uint8_t gpio_pin = GPIO_NUM_32;
-
-using bus = NeoPixelBus<NeoGrbFeature, NeoWs2812xMethod>;
-
 void setup();
-bus& get_bus();
+void loop();
 
 } // namespace neopixel
 

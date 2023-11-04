@@ -21,6 +21,7 @@ void setup()
     wordclock::color::setup();
     wordclock::wifi::setup();
     wordclock::captive::setup();
+    wordclock::neopixel::setup();
 
     wordclock::wifi::connect_one_shot(wordclock::time::update_from_sntp);
 }
@@ -28,11 +29,5 @@ void setup()
 void loop()
 {
     wordclock::captive::process_next_request();
-
-    if (wordclock::time::is_updated_from_sntp()) {
-        const std::tm& localtime = wordclock::time::get();
-        const char* t = asctime(&localtime);
-        ESP_LOGV(main_log_tag, "local time: %s", t);
-    }
-    delay(1000);
+    wordclock::neopixel::loop();
 }
