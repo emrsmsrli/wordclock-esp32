@@ -1,0 +1,15 @@
+
+#ifndef WORDCLOCK_WC_TIME_H
+#define WORDCLOCK_WC_TIME_H
+
+#include <ctime>
+
+namespace wordclock { namespace time {
+
+void update_from_sntp();
+bool is_updated_from_sntp();
+const std::tm& get();
+
+}}
+
+#endif //WORDCLOCK_WC_TIME_H
