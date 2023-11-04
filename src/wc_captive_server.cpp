@@ -6,7 +6,7 @@
 #include <ESPAsyncWebServer.h>
 #include <WiFi.h>
 
-#include "wc_color.h"
+#include "wc_neopixel.h"
 #include "wc_wifi.h"
 #include "wc_time.h"
 
@@ -75,11 +75,7 @@ String fill_page_details()
     String page = index_html;
     page.replace("{wifi_ssid}", wordclock::wifi::ssid());
     page.replace("{wifi_pass}", wordclock::wifi::pass());
-
-    const RgbColor& color_hex = wordclock::color::current;
-    char rgb_buf[8];
-    snprintf(rgb_buf, 8, "#%02X%02X%02x", color_hex.R, color_hex.G, color_hex.B);
-    page.replace("{current_color_hex}", rgb_buf);
+    page.replace("{current_color_hex}", wordclock::color::to_string(wordclock::color::current()));
     return page;
 }
 
@@ -143,10 +139,8 @@ void setup()
             ESP_LOGW(captive_log_tag, "update color params not found");
             return;
         }
-        const String& new_color_str = request->getParam("color")->value();
-        RgbColor new_color;
-        sscanf(new_color_str.c_str(), "#%02hhX%02hhX%02hhX", &new_color.R, &new_color.G, &new_color.B);
 
+        const RgbColor new_color = wordclock::color::from_string(request->getParam("color")->value());
         if (new_color != wordclock::color::current()) {
             wordclock::color::set_current(new_color);
         }
