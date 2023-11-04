@@ -2,7 +2,7 @@
 #include <Arduino.h>
 
 #include "wc_time.h"
-#include "wc_color.h"
+#include "wc_neopixel.h"
 #include "wc_wifi.h"
 #include "wc_captive_server.h"
 #include "wc_globals.h"
