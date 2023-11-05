@@ -94,21 +94,21 @@ public:
     uint8_t animator_idx() const { return anim_idx; };
 };
 
-led_array IT(0, 105, 107);
-led_array IS(1, 108, 110);
-led_array O_OCLOCK(2, 6, 12);
-led_array O_PAST(3, 61, 65);
-led_array O_TO(4, 72, 74);
+led_array LEDS_NONE(0, 0, 0);
+led_array IT(1, 105, 107);
+led_array IS(2, 108, 110);
+led_array O_OCLOCK(3, 6, 12);
+led_array O_PAST(4, 61, 65);
+led_array O_TO(5, 72, 74);
 
 led_array S[] = {
-  led_array(5, 1, 2),      //S_1
-  led_array(6, 2, 3),      //S_2
-  led_array(7, 3, 4),      //S_3
-  led_array(8, 4, 5),      //S_4
-  led_array(9, 5, 6),      //S_5
+  led_array(6, 1, 2),      //S_1
+  led_array(7, 2, 3),      //S_2
+  led_array(8, 3, 4),      //S_3
+  led_array(9, 4, 5),      //S_4
+  led_array(10, 5, 6),      //S_5
 };
 
-led_array M_NONE(10, 0, 0);
 led_array M_5(11, 90, 94);
 led_array M_10(12, 75, 78);
 led_array M_15(13, 97, 104);
@@ -117,27 +117,28 @@ led_array M_25(15, 83, 94);
 led_array M_30(16, 79, 83);
 
 led_array H[] = {
-  led_array(17, 58, 61),    // H_1
-  led_array(18, 55, 58),    // H_2
-  led_array(19, 50, 55),    // H_3
-  led_array(20, 39, 43),    // H_4
-  led_array(21, 43, 47),    // H_5
-  led_array(22, 47, 50),    // H_6
-  led_array(23, 66, 71),    // H_7
-  led_array(24, 17, 22),    // H_8
-  led_array(25, 35, 39),    // H_9
-  led_array(26, 14, 17),    // H_10
-  led_array(27, 22, 28),    // H_11
-  led_array(28, 28, 34)     // H_12
+  led_array(17, 28, 34),    // H_12
+  led_array(18, 58, 61),    // H_1
+  led_array(19, 55, 58),    // H_2
+  led_array(20, 50, 55),    // H_3
+  led_array(21, 39, 43),    // H_4
+  led_array(22, 43, 47),    // H_5
+  led_array(23, 47, 50),    // H_6
+  led_array(24, 66, 71),    // H_7
+  led_array(25, 17, 22),    // H_8
+  led_array(26, 35, 39),    // H_9
+  led_array(27, 14, 17),    // H_10
+  led_array(28, 22, 28)     // H_11
 };
 
-NeoPixelAnimator animator{29 /*n_led_array_count*/};
+NeoPixelAnimator animator{30 /*n_led_array_count + loading*/};
+constexpr auto loading_animator_idx = 29;
 
 struct led_state {
-    led_array seconds = S[0];
-    led_array minute = M_NONE;
-    led_array hour = H[0];
-    led_array oclock = O_OCLOCK;
+    led_array seconds = LEDS_NONE;
+    led_array minute = LEDS_NONE;
+    led_array hour = LEDS_NONE;
+    led_array oclock = LEDS_NONE;
 };
 
 NeoPixelBus<NeoGrbFeature, NeoWs2812xMethod> pixel_bus{num_pixels, gpio_pin};
@@ -151,7 +152,7 @@ bool do_leds_needs_calculation = false;
 // timer task callback
 void on_ticker_tick()
 {
-    ESP_LOGV(neo_log_tag, "ticker");
+    ESP_LOGD(neo_log_tag, "time tick: %s", std::asctime(&time::get()));
     do_leds_needs_calculation = true;
 }
 
@@ -172,7 +173,7 @@ void calculate_next_leds()
 
     if(min < 5) {                                   /// 0 - 5
         current_leds.oclock = O_OCLOCK;
-        current_leds.minute = M_NONE;
+        current_leds.minute = LEDS_NONE;
     } else if(min < 35) {                           /// 5 - 35
         current_leds.oclock = O_PAST;
         if (min < 10) {                             // 5 - 10
@@ -210,15 +211,17 @@ void calculate_next_leds()
     current_leds.hour = H[hour];
 }
 
+RgbColor calculate_color(const AnimEaseFunction& ease, RgbColor start, RgbColor end, const AnimationParam& param)
+{
+    const float progress = ease(param.progress);
+    const RgbColor blended_color = RgbColor::LinearBlend(start, end, progress);
+    return is_night() ? blended_color.Dim(0x20) : blended_color;
+}
+
 void start_animation(led_array arr, RgbColor start, RgbColor end, uint16_t animation_duration_ms = 250)
 {
     animator.StartAnimation(arr.animator_idx(), animation_duration_ms, [=](const AnimationParam& param) {
-        const float progress = NeoEase::CubicOut(param.progress);
-        RgbColor updatedColor = RgbColor::LinearBlend(start, end, progress);
-        if (is_night()) {
-            updatedColor = updatedColor.Dim(0x20);
-        }
-        arr.paint(updatedColor);
+        arr.paint(calculate_color(NeoEase::CubicOut, start, end, param));
     });
 }
 
@@ -274,6 +277,24 @@ void animate_all_lit(RgbColor start, RgbColor end)
     start_animation(current_leds.oclock, start, end, animation_duration_ms);
 }
 
+void set_show_loading_led(bool show)
+{
+    animator.StartAnimation(loading_animator_idx, 500, [=](const AnimationParam& param) {
+        static bool reverse = false;
+        const RgbColor color = calculate_color(NeoEase::ExponentialInOut,
+           !show || reverse ? color::red : color::black,
+           !show || reverse ? color::black : color::red,
+           param);
+
+        pixel_bus.SetPixelColor(unused_pixel_idx, color);
+
+        if (show && param.state == AnimationState_Completed) {
+            reverse = !reverse;
+            animator.RestartAnimation(loading_animator_idx);
+        }
+    });
+}
+
 void setup()
 {
     ESP_LOGI(neo_log_tag, "setting up NeoPixelBus");
@@ -282,19 +303,11 @@ void setup()
     pixel_bus.Show();
 
     ticker.attach(1.f, on_ticker_tick);
-
-    start_animation(IT, color::black, color::current_color);
-    start_animation(IS, color::black, color::current_color);
 }
 
 void loop()
 {
-    if (!wordclock::time::is_updated_from_sntp()) {
-        delay(100);
-        return;
-    }
-
-    if (do_leds_needs_calculation) {
+    if (wordclock::time::is_updated_from_sntp() && do_leds_needs_calculation) {
         last_leds = current_leds;
         calculate_next_leds();
         start_new_animations();
@@ -302,10 +315,28 @@ void loop()
         do_leds_needs_calculation = false;
     }
 
+    loop_animation();
+}
+
+void loop_animation()
+{
     if (animator.IsAnimating()) {
         animator.UpdateAnimations();
         pixel_bus.Show();
     }
+}
+
+void show_loading_led()
+{
+    set_show_loading_led(true);
+}
+
+void hide_loading_led()
+{
+    set_show_loading_led(false);
+
+    start_animation(IT, color::black, color::current_color);
+    start_animation(IS, color::black, color::current_color);
 }
 
 } // namespace neopixel

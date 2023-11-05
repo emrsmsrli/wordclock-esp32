@@ -24,6 +24,10 @@ namespace neopixel {
 
 void setup();
 void loop();
+void loop_animation();
+
+void show_loading_led();
+void hide_loading_led();
 
 } // namespace neopixel
 

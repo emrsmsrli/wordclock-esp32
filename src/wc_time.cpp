@@ -5,6 +5,8 @@
 #include <esp_log.h>
 #include <esp_sntp.h>
 
+#include "wc_neopixel.h"
+
 namespace wordclock { namespace time {
 
 namespace {
@@ -28,10 +30,11 @@ void update_from_sntp()
     sntp_init();
 
     uint32_t retry = 0;
-    constexpr uint32_t retry_count = 40;
+    constexpr uint32_t retry_count = 100;
     while (sntp_get_sync_status() == SNTP_SYNC_STATUS_RESET && ++retry < retry_count) {
-        ESP_LOGV(sntp_log_tag, "waiting for system time to be set... (%d/%d)", retry, retry_count);
-        delay(250);
+        ESP_LOGI(sntp_log_tag, "waiting for system time to be set... (%d/%d)", retry, retry_count);
+        delay(100);
+        neopixel::loop_animation();
     }
 
     if (retry == retry_count) {
@@ -44,7 +47,7 @@ void update_from_sntp()
     tzset();
 
     is_time_fetched = true;
-    ESP_LOGV(sntp_log_tag, "time fetched successfully");
+    ESP_LOGI(sntp_log_tag, "time fetched successfully");
 }
 
 bool is_updated_from_sntp()

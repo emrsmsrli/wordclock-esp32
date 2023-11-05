@@ -1,8 +1,11 @@
 
-#include "Arduino.h"
-#include "WiFi.h"
 #include "wc_wifi.h"
+
+#include <Arduino.h>
+#include <WiFi.h>
+
 #include "wc_globals.h"
+#include "wc_neopixel.h"
 
 namespace wordclock { namespace wifi {
 
@@ -53,7 +56,7 @@ void set_pass(const String& new_pass)
 void connect_one_shot(on_connect_fun* on_connect)
 {
     if (!wifi_ssid.isEmpty()) {
-        ESP_LOGV(wifi_log_tag, "connecting WiFi to %s:%s ...", wifi_ssid.c_str(), wifi_pass.c_str());
+        ESP_LOGI(wifi_log_tag, "connecting WiFi to %s:%s ...", wifi_ssid.c_str(), wifi_pass.c_str());
         ASSERT(WiFi.begin(wifi_ssid, wifi_pass));
 
         constexpr uint32_t wait_delay = 500;
@@ -71,6 +74,7 @@ void connect_one_shot(on_connect_fun* on_connect)
             }
 
             delay(wait_delay);
+            neopixel::loop_animation();
             if (n_tries == 0) {
                 ESP_LOGE(wifi_log_tag, "failed to connect to WiFi");
                 break;

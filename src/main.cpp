@@ -23,7 +23,11 @@ void setup()
     wordclock::captive::setup();
     wordclock::neopixel::setup();
 
+    wordclock::neopixel::show_loading_led();
     wordclock::wifi::connect_one_shot(wordclock::time::update_from_sntp);
+    if (wordclock::time::is_updated_from_sntp()) {
+        wordclock::neopixel::hide_loading_led();
+    }
 }
 
 void loop()
