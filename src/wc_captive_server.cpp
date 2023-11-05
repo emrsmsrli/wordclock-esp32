@@ -19,56 +19,7 @@ namespace {
 DNSServer dns_server;
 AsyncWebServer web_server(80);
 
-String index_html = R"html(
-    <!DOCTYPE HTML>
-    <html>
-    <head>
-      <title>WordClock</title>
-      <meta name="viewport" content="width=device-width, initial-scale=1">
-      <style>
-        body, html {
-          height: 100%;
-          width: 100%;
-          margin: 0px;
-          display: flex;
-          flex-direction: column;
-        }
-        .color_form {
-          display: flex;
-          flex-direction: column;
-          flex: 1;
-        }
-        .color_picker {
-          flex: 1;
-        }
-        label { display: block; }
-        input[type='submit'],
-        input[type='color'],
-        label { margin-top: 1rem; }
-      </style>
-    </head>
-    <body>
-      <h1>WordClock</h1>
-      <form class="wifi_form" action="/update_wifi">
-        <div>
-          <label for="wifi_ssid">SSID:</label>
-          <input type="text" id="wifi_ssid" name="wifi_ssid" value="{wifi_ssid}" />
-        </div>
-        <div>
-          <label for="wifi_pass">Password:</label>
-          <input type="text" id="wifi_pass" name="wifi_pass" value="{wifi_pass}" />
-        </div>
-        <input type="submit" value="Update WiFi credentials">
-      </form>
-
-      <form class="color_form" action="/update_color">
-        <div class="color_picker">
-          <input type="color" name="color" value="{current_color_hex}" style="width:100%;height:100%;">
-        </div>
-        <input type="submit" value="Update color">
-      </form>
-    </body>
-    </html>)html";
+String index_html = R"html(<!DOCTYPE html><title>WordClock</title><meta content="width=device-width,initial-scale=1"name=viewport><style>body,html{height:100%;width:100%;margin:0;display:flex;flex-direction:column}.color_form{display:flex;flex-direction:column;flex:1}.color_picker{flex:1}label{display:block}input[type=submit],input[type=color],label{margin-top:1rem}</style><h1>WordClock</h1><form action=/update_wifi class=wifi_form><div><label for=wifi_ssid>SSID:</label><input value={wifi_ssid} name=wifi_ssid id=wifi_ssid></div><div><label for=wifi_pass>Password:</label><input value={wifi_pass} type=password name=wifi_pass id=wifi_pass></div><input value="Update WiFi credentials"type=submit></form><form action=/update_color class=color_form><div class=color_picker><input value={current_color_hex} type=color name=color style=width:100%;height:100%></div><input value="Update color"type=submit></form>)html";
 
 String fill_page_details()
 {
@@ -114,13 +65,13 @@ void setup()
 
         bool creds_changed = false;
         if (new_wifi_ssid != wordclock::wifi::ssid()) {
-            ESP_LOGV(captive_log_tag, "WiFi SSID changed: %s", new_wifi_ssid.c_str());
+            ESP_LOGI(captive_log_tag, "WiFi SSID changed: %s", new_wifi_ssid.c_str());
             wordclock::wifi::set_ssid(new_wifi_ssid);
             creds_changed = true;
         }
 
         if (new_wifi_pass != wordclock::wifi::pass()) {
-            ESP_LOGV(captive_log_tag, "WiFi pass changed: %s", new_wifi_pass.c_str());
+            ESP_LOGI(captive_log_tag, "WiFi pass changed: %s", new_wifi_pass.c_str());
             wordclock::wifi::set_pass(new_wifi_pass);
             creds_changed = true;
         }
@@ -134,14 +85,16 @@ void setup()
                       "<a href=\"/\">Return to main page</a>");
     });
 
-    web_server.on("/color", HTTP_GET, [](AsyncWebServerRequest* request) {
+    web_server.on("/update_color", HTTP_GET, [](AsyncWebServerRequest* request) {
         if (!request->hasParam("color")) {
             ESP_LOGW(captive_log_tag, "update color params not found");
             return;
         }
 
-        const RgbColor new_color = wordclock::color::from_string(request->getParam("color")->value());
+        const String& new_color_str = request->getParam("color")->value();
+        const RgbColor new_color = wordclock::color::from_string(new_color_str);
         if (new_color != wordclock::color::current()) {
+            ESP_LOGI(captive_log_tag, "color changed: %s", new_color_str.c_str());
             wordclock::color::set_current(new_color);
         }
 
