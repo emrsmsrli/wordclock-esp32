@@ -47,14 +47,14 @@ void set_current(RgbColor new_color)
 RgbColor from_string(const String& str)
 {
     RgbColor color;
-    sscanf(str.c_str(), "#%02" SCNx8 "02%" SCNx8 "02%" SCNx8, &color.R, &color.G, &color.B);
+    sscanf(str.c_str(), "#%02" SCNx8 "%02" SCNx8 "%02" SCNx8, &color.R, &color.G, &color.B);
     return color;
 }
 
 String to_string(RgbColor color)
 {
     char rgb_buf[8];
-    snprintf(rgb_buf, 8, "#%02" PRIx8 "02%" PRIx8 "02%" PRIx8, color.R, color.G, color.B);
+    snprintf(rgb_buf, 8, "#%02" PRIx8 "%02" PRIx8 "%02" PRIx8, color.R, color.G, color.B);
     return String{rgb_buf};
 }
 
