@@ -2,6 +2,8 @@
 #ifndef WORDCLOCK_WC_WIFI_H
 #define WORDCLOCK_WC_WIFI_H
 
+#include <Arduino.h>
+
 namespace wordclock { namespace wifi {
 
 void setup();
