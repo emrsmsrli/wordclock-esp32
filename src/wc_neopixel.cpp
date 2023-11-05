@@ -22,7 +22,7 @@ const RgbColor red{255, 0, 0};
 
 namespace {
 
-const char pref_current_color[] = "pref_current_color";
+const char pref_current_color[] = "pref_color";
 RgbColor current_color = red;
 
 }
