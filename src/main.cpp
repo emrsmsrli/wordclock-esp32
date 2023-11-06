@@ -15,7 +15,7 @@ namespace {
 
 void setup()
 {
-    Serial.begin(9600);
+    Serial.begin(115200);
 
     wordclock::setup_globals();
     wordclock::color::setup();
