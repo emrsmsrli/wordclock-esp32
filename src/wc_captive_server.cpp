@@ -92,8 +92,8 @@ void setup()
         }
 
         request->send(200, "text/html",
-                      "WiFi credentials successfully updated <br>"
-                      "<a href=\"/\">Return to main page</a>");
+          "WiFi credentials successfully updated <br>"
+          "<a href=\"/\">Return to main page</a>");
     });
 
     web_server.on("/update_color", HTTP_GET, [](AsyncWebServerRequest* request) {
@@ -110,8 +110,8 @@ void setup()
         }
 
         request->send(200, "text/html",
-                      "Color successfully updated <br>"
-                      "<a href=\"/\">Return to main page</a>");
+          "Color successfully updated <br>"
+          "<a href=\"/\">Return to main page</a>");
     });
 
     dns_server.start(53, "*", WiFi.softAPIP());

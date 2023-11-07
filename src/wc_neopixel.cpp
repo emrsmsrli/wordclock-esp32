@@ -98,16 +98,8 @@ public:
 
     void paint(RgbColor color) const;
 
-    bool operator==(const led_array& other) const
-    {
-        return start == other.start && end == other.end;
-    }
-
-    bool operator!=(const led_array& other) const
-    {
-        return start != other.start || end != other.end;
-    }
-
+    bool operator==(const led_array& other) const { return start == other.start && end == other.end; }
+    bool operator!=(const led_array& other) const { return start != other.start || end != other.end; }
     uint8_t animator_idx() const { return anim_idx; };
 };
 
@@ -176,10 +168,10 @@ void calculate_next_leds()
 
     current_leds.seconds = S[sec % num_pixels_for_secs];
 
-    if(min < 5) {                                   /// 0 - 5
+    if (min < 5) {                                  /// 0 - 5
         current_leds.oclock = O_OCLOCK;
         current_leds.minute = LEDS_NONE;
-    } else if(min < 35) {                           /// 5 - 35
+    } else if (min < 35) {                          /// 5 - 35
         current_leds.oclock = O_PAST;
         if (min < 10) {                             // 5 - 10
             current_leds.minute = M_5;
