@@ -22,7 +22,7 @@ ESP32-Arduino version of [WordClock](https://github.com/emrsmsrli/WordClock/).
 
 This project also incorporates a web interface where one can 
 configure the credentials WiFi STA connection. This is achieved
-by setting ESP32 WiFi as the DNS captive portal.
+by setting ESP32 WiFi as a DNS captive portal.
 
 <img alt="AP portal" src=".github/portal.png" height="1000" />
 
