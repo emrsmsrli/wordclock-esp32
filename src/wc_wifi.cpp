@@ -65,7 +65,7 @@ void setup()
     ESP_LOGI(wifi_log_tag, "starting WiFi AP");
 
     ASSERT(WiFi.mode(WIFI_AP_STA));
-    ASSERT(WiFi.softAP("WordClock-AP", "wordclock-emre"));
+    ASSERT(WiFi.softAP("WordClock-AP", "wordclock"));
 }
 
 const String& ssid()
