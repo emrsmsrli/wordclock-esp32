@@ -1,3 +1,4 @@
+// Copyright (C) 2023 Emre Simsirli
 
 #ifndef WORDCLOCK_WC_TIME_H
 #define WORDCLOCK_WC_TIME_H
