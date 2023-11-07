@@ -11,6 +11,7 @@ ESP32-Arduino version of [WordClock](https://github.com/emrsmsrli/WordClock/).
 ## Features
 
 - Smooth async animation 
+- Time update from SNTP every boot
 - Low brightness LEDs at night
 - WiFi AP point for customization
 - WiFi STA connection for time synchronization
@@ -37,6 +38,16 @@ by setting ESP32 WiFi as the DNS captive portal.
 
 Actual build instructions for the hardware are 
 in [Tinker's WordClock page](https://www.instructables.com/Tinkers-Word-Clock-REVISITED-NOW-110-More-AWESOME-/) 
+
+For this project though, you only need an ESP32 devkit (or your custom build). 
+Then you should plug the LED array into pin 13 (GPIO12), connect the power lines, and you're all set! 
+As per [AdaFruit best practices](https://learn.adafruit.com/adafruit-neopixel-uberguide/best-practices), should also put a capacitor and a resistor 
+in the appropriate places on the circuit.
+
+## Setting up
+
+When you first flash this program, WordClock won't be able to update the time from SNTP.
+You should connect to the AP (**SSID:** _WordClock-AP_) and set the credentials there.
 
 ## Licence
 
