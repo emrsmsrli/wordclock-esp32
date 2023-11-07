@@ -5,16 +5,21 @@
 #include <esp_log.h>
 #include <esp_sntp.h>
 
-#include "wc_neopixel.h"
-
 namespace wordclock { namespace time {
 
 namespace {
 
 [[maybe_unused]] const char sntp_log_tag[] = "sntp";
 
-bool is_time_fetched = false;
+volatile bool is_time_fetched = false;
 std::tm local_time{};
+
+void cache_time()
+{
+    std::time_t now = 0;
+    std::time(&now);
+    localtime_r(&now, &local_time);
+}
 
 }
 
@@ -34,7 +39,6 @@ void update_from_sntp()
     while (sntp_get_sync_status() == SNTP_SYNC_STATUS_RESET && ++retry < retry_count) {
         ESP_LOGI(sntp_log_tag, "waiting for system time to be set... (%d/%d)", retry, retry_count);
         delay(100);
-        neopixel::loop_animation();
     }
 
     if (retry == retry_count) {
@@ -48,6 +52,8 @@ void update_from_sntp()
 
     is_time_fetched = true;
     ESP_LOGI(sntp_log_tag, "time fetched successfully");
+
+    cache_time();
 }
 
 bool is_updated_from_sntp()
@@ -58,11 +64,15 @@ bool is_updated_from_sntp()
 const std::tm& get(bool cache)
 {
     if (cache) {
-        std::time_t now = 0;
-        std::time(&now);
-        localtime_r(&now, &local_time);
+        cache_time();
     }
     return local_time;
 }
 
-}}
+bool is_night()
+{
+    const int32_t h = local_time.tm_hour;
+    return h >= 21 || h < 7;
+}
+
+}} // namespace wordclock::time

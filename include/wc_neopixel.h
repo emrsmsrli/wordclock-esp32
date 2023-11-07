@@ -11,7 +11,6 @@ namespace color {
 extern const RgbColor black;
 extern const RgbColor red;
 
-void setup();
 RgbColor current();
 void set_current(RgbColor new_color);
 
@@ -23,8 +22,6 @@ String to_string(RgbColor color);
 namespace neopixel {
 
 void setup();
-void loop();
-void loop_animation();
 
 void show_loading_led();
 void hide_loading_led();

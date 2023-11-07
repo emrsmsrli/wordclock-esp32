@@ -15,4 +15,4 @@ void halt()
     while (true) {}
 }
 
-}
+} // namespace wordclock

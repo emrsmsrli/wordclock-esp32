@@ -6,6 +6,7 @@
 #include <ESPAsyncWebServer.h>
 #include <WiFi.h>
 
+#include "wc_globals.h"
 #include "wc_neopixel.h"
 #include "wc_wifi.h"
 #include "wc_time.h"
@@ -44,6 +45,16 @@ public:
     }
 };
 
+TaskHandle_t task_captive_handle = nullptr;
+
+[[noreturn]] void task_captive(void*)
+{
+    while (true) {
+        dns_server.processNextRequest();
+        delay(100);
+    }
+}
+
 }
 
 void setup()
@@ -76,7 +87,7 @@ void setup()
             creds_changed = true;
         }
 
-        if (creds_changed) {
+        if (creds_changed && !wordclock::time::is_updated_from_sntp()) {
             wordclock::wifi::connect_one_shot(wordclock::time::update_from_sntp);
         }
 
@@ -106,11 +117,14 @@ void setup()
     dns_server.start(53, "*", WiFi.softAPIP());
     web_server.addHandler(new captive_req_handler()).setFilter(ON_AP_FILTER);
     web_server.begin();
+
+    xTaskCreate(
+      task_captive,
+      "task_captive",
+      default_task_stack_size / 2,
+      /*pvParameters=*/nullptr,
+      /*uxPriority=*/1,
+      &task_captive_handle);
 }
 
-void process_next_request()
-{
-    dns_server.processNextRequest();
-}
-
-}}
+}} // namespace wordclock::captive

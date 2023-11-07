@@ -5,7 +5,6 @@
 namespace wordclock { namespace captive {
 
 void setup();
-void process_next_request();
 
 }}
 

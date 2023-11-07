@@ -6,6 +6,7 @@
 
 #include "wc_globals.h"
 #include "wc_time.h"
+#include "wc_alarm.h"
 
 namespace wordclock {
 
@@ -13,7 +14,7 @@ namespace neopixel {
 
 void animate_all_lit(RgbColor start, RgbColor end);
 
-}
+} // namespace neopixel
 
 namespace color {
 
@@ -22,15 +23,28 @@ const RgbColor red{255, 0, 0};
 
 namespace {
 
+[[maybe_unused]] const char color_log_tag[] = "color";
+
+constexpr uint8_t low_brightness_factor = 0x20;
 const char pref_current_color[] = "pref_color";
 RgbColor current_color = red;
 
-}
+String to_string(RgbColor color);
 
 void setup()
 {
-    wordclock::preferences.getBytes(pref_current_color, &current_color, sizeof(current_color));
+    const std::size_t read_bytes = wordclock::preferences.getBytes(pref_current_color, &current_color, sizeof(current_color));
+    if (read_bytes != 0) {
+        ESP_LOGI(color_log_tag, "read current color from NVS %s", color::to_string(current_color).c_str());
+    }
 }
+
+RgbColor adj_brightness(RgbColor color)
+{
+    return time::is_night() ? color.Dim(low_brightness_factor) : color;
+}
+
+} // namespace
 
 RgbColor current()
 {
@@ -39,7 +53,7 @@ RgbColor current()
 
 void set_current(RgbColor new_color)
 {
-    neopixel::animate_all_lit(current_color, new_color);
+    neopixel::animate_all_lit(adj_brightness(current_color), adj_brightness(new_color));
     current_color = new_color;
     wordclock::preferences.putBytes(pref_current_color, &current_color, sizeof(current_color));
 }
@@ -147,20 +161,8 @@ Ticker ticker;
 led_state current_leds;
 led_state last_leds;
 
-bool do_leds_needs_calculation = false;
-
-// timer task callback
-void on_ticker_tick()
-{
-    ESP_LOGD(neo_log_tag, "time tick: %s", std::asctime(&time::get()));
-    do_leds_needs_calculation = true;
-}
-
-bool is_night()
-{
-    const int32_t h = time::get(/*cache=*/false).tm_hour;
-    return h >= 21 || h < 7;
-}
+TaskHandle_t task_anim_loop_handle;
+TaskHandle_t task_calculate_time_handle;
 
 void calculate_next_leds()
 {
@@ -214,8 +216,7 @@ void calculate_next_leds()
 RgbColor calculate_color(const AnimEaseFunction& ease, RgbColor start, RgbColor end, const AnimationParam& param)
 {
     const float progress = ease(param.progress);
-    const RgbColor blended_color = RgbColor::LinearBlend(start, end, progress);
-    return is_night() ? blended_color.Dim(0x20) : blended_color;
+    return RgbColor::LinearBlend(start, end, progress);
 }
 
 void start_animation(led_array arr, RgbColor start, RgbColor end, uint16_t animation_duration_ms = 250)
@@ -225,32 +226,42 @@ void start_animation(led_array arr, RgbColor start, RgbColor end, uint16_t anima
     });
 }
 
+void toggle_brightness()
+{
+    if (time::is_night()) {
+        animate_all_lit(color::current_color, color::current_color.Dim(color::low_brightness_factor));
+    } else {
+        animate_all_lit(color::current_color.Dim(color::low_brightness_factor), color::current_color);
+    }
+}
+
 void start_new_animations()
 {
+    const RgbColor brightness_adjusted = color::adj_brightness(color::current_color);
     if (last_leds.seconds != current_leds.seconds) {
-        start_animation(last_leds.seconds, color::current_color, color::black);
-        start_animation(current_leds.seconds, color::black, color::current_color);
+        start_animation(last_leds.seconds, brightness_adjusted, color::black);
+        start_animation(current_leds.seconds, color::black, brightness_adjusted);
     }
 
     if (last_leds.minute != current_leds.minute) {
         if (last_leds.minute == M_20 && current_leds.minute == M_25) {
-            start_animation(M_5, color::black, color::current_color);
+            start_animation(M_5, color::black, brightness_adjusted);
         } else if (last_leds.minute == M_25 && current_leds.minute == M_20) {
-            start_animation(M_5, color::current_color, color::black);
+            start_animation(M_5, brightness_adjusted, color::black);
         } else {
-            start_animation(last_leds.minute, color::current_color, color::black);
-            start_animation(current_leds.minute, color::black, color::current_color);
+            start_animation(last_leds.minute, brightness_adjusted, color::black);
+            start_animation(current_leds.minute, color::black, brightness_adjusted);
         }
     }
 
     if (last_leds.hour != current_leds.hour) {
-        start_animation(last_leds.hour, color::current_color, color::black);
-        start_animation(current_leds.hour, color::black, color::current_color);
+        start_animation(last_leds.hour, brightness_adjusted, color::black);
+        start_animation(current_leds.hour, color::black, brightness_adjusted);
     }
 
     if (last_leds.oclock != current_leds.oclock) {
-        start_animation(last_leds.oclock, color::current_color, color::black);
-        start_animation(current_leds.oclock, color::black, color::current_color);
+        start_animation(last_leds.oclock, brightness_adjusted, color::black);
+        start_animation(current_leds.oclock, color::black, brightness_adjusted);
     }
 }
 
@@ -264,7 +275,47 @@ void led_array::paint(RgbColor color) const
     }
 }
 
+/** tasks **/
+
+// timer callback
+void on_ticker_tick()
+{
+    ESP_LOGD(neo_log_tag, "time tick: %s", std::asctime(&time::get()));
+    xTaskNotifyGive(task_calculate_time_handle);
 }
+
+[[noreturn]] void task_anim_loop(void*)
+{
+    while (true) {
+        if (animator.IsAnimating()) {
+            animator.UpdateAnimations();
+            pixel_bus.Show();
+        }
+        delay(1);
+    }
+}
+
+[[noreturn]] void task_calculate_time(void*)
+{
+    while (!wordclock::time::is_updated_from_sntp()) {
+        delay(100);
+    }
+
+    ticker.attach(1.f, on_ticker_tick);
+
+    ulTaskNotifyTake(/*xClearCountOnExit=*/pdTRUE, portMAX_DELAY);
+    hide_loading_led();
+
+    while (true) {
+        ESP_LOGD(neo_log_tag, "calculating time leds");
+        ulTaskNotifyTake(/*xClearCountOnExit=*/pdTRUE, portMAX_DELAY);
+        last_leds = current_leds;
+        calculate_next_leds();
+        start_new_animations();
+    }
+}
+
+} // namespace
 
 void animate_all_lit(RgbColor start, RgbColor end)
 {
@@ -297,33 +348,30 @@ void set_show_loading_led(bool show)
 
 void setup()
 {
+    color::setup();
     ESP_LOGI(neo_log_tag, "setting up NeoPixelBus");
 
     pixel_bus.Begin();
     pixel_bus.Show();
 
-    ticker.attach(1.f, on_ticker_tick);
-}
+    xTaskCreate(
+      task_anim_loop,
+      "anim_loop",
+      default_task_stack_size,
+      /*pvParameters=*/nullptr,
+      /*uxPriority=*/1,
+      &task_anim_loop_handle);
 
-void loop()
-{
-    if (wordclock::time::is_updated_from_sntp() && do_leds_needs_calculation) {
-        last_leds = current_leds;
-        calculate_next_leds();
-        start_new_animations();
+    xTaskCreate(
+      task_calculate_time,
+      "calculate_time",
+      default_task_stack_size,
+      /*pvParameters=*/nullptr,
+      /*uxPriority=*/1,
+      &task_calculate_time_handle);
 
-        do_leds_needs_calculation = false;
-    }
-
-    loop_animation();
-}
-
-void loop_animation()
-{
-    if (animator.IsAnimating()) {
-        animator.UpdateAnimations();
-        pixel_bus.Show();
-    }
+    wordclock::alarm::register_alarm(wordclock::alarm::alarm::from_hours_mins(7, 0, toggle_brightness));
+    wordclock::alarm::register_alarm(wordclock::alarm::alarm::from_hours_mins(21, 0, toggle_brightness));
 }
 
 void show_loading_led()
@@ -335,10 +383,11 @@ void hide_loading_led()
 {
     set_show_loading_led(false);
 
-    start_animation(IT, color::black, color::current_color);
-    start_animation(IS, color::black, color::current_color);
+    const RgbColor brightness_adjusted_color = color::adj_brightness(color::current_color);
+    start_animation(IT, color::black, brightness_adjusted_color);
+    start_animation(IS, color::black, brightness_adjusted_color);
 }
 
 } // namespace neopixel
 
-}
+} // namespace wordclock

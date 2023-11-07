@@ -11,6 +11,7 @@ namespace wordclock {
 extern Preferences preferences;
 
 constexpr const char* assert_log_tag = "assert";
+constexpr uint16_t default_task_stack_size = 5120;
 
 void setup_globals();
 [[noreturn]] void halt();
