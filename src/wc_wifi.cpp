@@ -7,6 +7,10 @@
 
 #include "wc_globals.h"
 
+#ifndef WC_WIFI_AP_PASSWORD
+  #define WC_WIFI_AP_PASSWORD "wordclock_default_ap_password"
+#endif // WC_WIFI_AP_PASSWORD
+
 namespace wordclock { namespace wifi {
 
 namespace {
@@ -66,7 +70,7 @@ void setup()
     ESP_LOGI(wifi_log_tag, "starting WiFi AP");
 
     ASSERT(WiFi.mode(WIFI_AP_STA));
-    ASSERT(WiFi.softAP("WordClock-AP", "wordclock"));
+    ASSERT(WiFi.softAP("WordClock-AP",  WC_WIFI_AP_PASSWORD));
 }
 
 const String& ssid()
