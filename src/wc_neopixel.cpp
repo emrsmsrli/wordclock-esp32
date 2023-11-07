@@ -224,15 +224,22 @@ void start_animation(led_array arr, RgbColor start, RgbColor end, uint16_t anima
 
 void toggle_brightness()
 {
-    if (time::is_night()) {
-        animate_all_lit(color::current_color, color::current_color.Dim(color::low_brightness_factor));
-    } else {
-        animate_all_lit(color::current_color.Dim(color::low_brightness_factor), color::current_color);
+    static bool was_night = time::is_night();
+    const bool is_night = time::is_night();
+    if (is_night != was_night) {
+        if (is_night) {
+            animate_all_lit(color::current_color, color::current_color.Dim(color::low_brightness_factor));
+        } else {
+            animate_all_lit(color::current_color.Dim(color::low_brightness_factor), color::current_color);
+        }
+        was_night = is_night;
     }
 }
 
 void start_new_animations()
 {
+    toggle_brightness();
+
     const RgbColor brightness_adjusted = color::adj_brightness(color::current_color);
     if (last_leds.seconds != current_leds.seconds) {
         start_animation(last_leds.seconds, brightness_adjusted, color::black);
@@ -365,9 +372,6 @@ void setup()
       /*pvParameters=*/nullptr,
       /*uxPriority=*/1,
       &task_calculate_time_handle);
-
-    wordclock::alarm::register_alarm(wordclock::alarm::alarm::from_hours_mins(7, 0, toggle_brightness));
-    wordclock::alarm::register_alarm(wordclock::alarm::alarm::from_hours_mins(21, 0, toggle_brightness));
 }
 
 void show_loading_led()
