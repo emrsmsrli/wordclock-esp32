@@ -60,15 +60,18 @@ void set_current(RgbColor new_color)
 
 RgbColor from_string(const String& str)
 {
-    RgbColor color;
-    sscanf(str.c_str(), "#%02" SCNx8 "%02" SCNx8 "%02" SCNx8, &color.R, &color.G, &color.B);
-    return color;
+    const uint32_t rgb = strtoul(str.c_str() + 1, nullptr, 16);
+    return RgbColor{
+        static_cast<uint8_t>(rgb >> 16),
+        static_cast<uint8_t>((rgb >> 8) & 0xFF),
+        static_cast<uint8_t>(rgb & 0xFF)
+    };
 }
 
 String to_string(RgbColor color)
 {
     char rgb_buf[8];
-    snprintf(rgb_buf, 8, "#%02" PRIx8 "%02" PRIx8 "%02" PRIx8, color.R, color.G, color.B);
+    snprintf(rgb_buf, 8, "#%02x%02x%02x", color.R, color.G, color.B);
     return String{rgb_buf};
 }
 
