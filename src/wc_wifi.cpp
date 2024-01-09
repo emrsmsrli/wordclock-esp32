@@ -70,7 +70,7 @@ void setup()
     ESP_LOGI(wifi_log_tag, "starting WiFi AP");
 
     ASSERT(WiFi.mode(WIFI_AP_STA));
-    ASSERT(WiFi.softAP("WordClock-AP",  WC_WIFI_AP_PASSWORD));
+    ASSERT(WiFi.softAP("WordClock-AP", WC_WIFI_AP_PASSWORD));
 }
 
 const String& ssid()
