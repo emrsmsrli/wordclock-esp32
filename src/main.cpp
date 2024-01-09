@@ -2,7 +2,6 @@
 
 #include <Arduino.h>
 
-#include "wc_alarm.h"
 #include "wc_time.h"
 #include "wc_neopixel.h"
 #include "wc_wifi.h"

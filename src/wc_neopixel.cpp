@@ -7,7 +7,6 @@
 
 #include "wc_globals.h"
 #include "wc_time.h"
-#include "wc_alarm.h"
 
 namespace wordclock {
 
