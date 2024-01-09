@@ -62,9 +62,9 @@ RgbColor from_string(const String& str)
 {
     const uint32_t rgb = strtoul(str.c_str() + 1, nullptr, 16);
     return RgbColor{
-        static_cast<uint8_t>(rgb >> 16),
-        static_cast<uint8_t>((rgb >> 8) & 0xFF),
-        static_cast<uint8_t>(rgb & 0xFF)
+      static_cast<uint8_t>(rgb >> 16),
+      static_cast<uint8_t>((rgb >> 8) & 0xFF),
+      static_cast<uint8_t>(rgb & 0xFF)
     };
 }
 
@@ -334,10 +334,11 @@ void set_show_loading_led(bool show)
 {
     animator.StartAnimation(loading_animator_idx, 500, [=](const AnimationParam& param) {
         static bool reverse = false;
+        bool hiding = !show || reverse;
         const RgbColor color = calculate_color(NeoEase::ExponentialInOut,
-           !show || reverse ? color::red : color::black,
-           !show || reverse ? color::black : color::red,
-           param);
+          hiding ? color::red : color::black,
+          hiding ? color::black : color::red,
+          param);
 
         pixel_bus.SetPixelColor(unused_pixel_idx, color);
 

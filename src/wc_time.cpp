@@ -43,9 +43,9 @@ void setup()
 span<const String> all_timezones()
 {
     static const String tz[]{
-        "Asia/Istanbul",
-        "Europe/London",
-        "Europe/Stockholm",
+      "Asia/Istanbul",
+      "Europe/London",
+      "Europe/Stockholm",
     };
     return span<const String>{tz, 3};
 }

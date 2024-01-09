@@ -87,11 +87,8 @@ void setup()
     });
 
     web_server.on("/update", HTTP_GET, [](AsyncWebServerRequest* request) {
-        if (!request->hasParam("wifi_ssid") ||
-            !request->hasParam("wifi_pass") ||
-            !request->hasParam("tz") ||
-            !request->hasParam("color"))
-        {
+        if (!request->hasParam("wifi_ssid") || !request->hasParam("wifi_pass") ||
+          !request->hasParam("tz") || !request->hasParam("color")) {
             ESP_LOGW(captive_log_tag, "update params not found");
             request->send(200, "text/html",
               "Failed to acquire parameters <br>"
