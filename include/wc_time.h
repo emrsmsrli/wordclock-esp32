@@ -5,7 +5,17 @@
 
 #include <ctime>
 
+#include <Arduino.h>
+
+#include "wc_span.h"
+
 namespace wordclock { namespace time {
+
+void setup();
+
+span<const String> all_timezones();
+const String& timezone();
+void set_timezone(const String& timezone);
 
 void update_from_sntp();
 bool is_updated_from_sntp();

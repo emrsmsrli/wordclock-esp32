@@ -6,14 +6,18 @@
 #include <esp_log.h>
 #include <esp_sntp.h>
 
+#include "wc_globals.h"
+
 namespace wordclock { namespace time {
 
 namespace {
 
 [[maybe_unused]] const char sntp_log_tag[] = "sntp";
+const char pref_timezone[] = "pref_timezone";
 
 volatile bool is_time_fetched = false;
 std::tm local_time{};
+uint32_t timezone_idx;
 
 void cache_time()
 {
@@ -22,6 +26,49 @@ void cache_time()
     localtime_r(&now, &local_time);
 }
 
+void setenv_tz()
+{
+    setenv("TZ", timezone().c_str(), /*overwrite*/1);
+    tzset();
+    cache_time();
+}
+
+}
+
+void setup()
+{
+    timezone_idx = preferences.getUInt(pref_timezone);
+}
+
+span<const String> all_timezones()
+{
+    static const String tz[]{
+        "Asia/Istanbul",
+        "Europe/London",
+        "Europe/Stockholm",
+    };
+    return span<const String>{tz, 3};
+}
+
+const String& timezone()
+{
+    return all_timezones()[timezone_idx];
+}
+
+void set_timezone(const String& timezone)
+{
+    uint32_t idx = 0;
+    for (const auto& item : all_timezones()) {
+        if (item == timezone) {
+            if (timezone_idx != idx) {
+                timezone_idx = idx;
+                preferences.putUInt(pref_timezone, timezone_idx);
+                setenv_tz();
+            }
+            return;
+        }
+        ++idx;
+    }
 }
 
 void update_from_sntp()
@@ -47,14 +94,10 @@ void update_from_sntp()
         return;
     }
 
-    // Europe/Sweden
-    setenv("TZ", "CET-1CEST,M3.5.0,M10.5.0/3", /*overwrite*/1);
-    tzset();
+    setenv_tz();
 
     is_time_fetched = true;
     ESP_LOGI(sntp_log_tag, "time fetched successfully");
-
-    cache_time();
 }
 
 bool is_updated_from_sntp()

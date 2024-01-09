@@ -20,6 +20,7 @@ void setup()
     Serial.begin(115200);
 
     wordclock::setup_globals();
+    wordclock::time::setup();
     wordclock::neopixel::setup();
     wordclock::wifi::setup();
     wordclock::captive::setup();
