@@ -24,9 +24,6 @@ void setup()
     wordclock::wifi::setup();
     wordclock::captive::setup();
 
-    // last to initialize
-    wordclock::alarm::setup();
-
     wordclock::neopixel::show_loading_led();
     wordclock::wifi::connect_one_shot(wordclock::time::update_from_sntp);
 }
