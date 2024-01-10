@@ -24,7 +24,7 @@ This project also incorporates a web interface where one can
 configure the credentials of a WiFi STA connection. This is achieved
 by setting ESP32 WiFi as a DNS captive portal.
 
-<img alt="AP portal" src=".github/portal.png" height="1000" />
+<img alt="AP portal" src=".github/portal.jpg" height="1000" />
 
 ## Building
 
