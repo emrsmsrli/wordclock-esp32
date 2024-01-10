@@ -28,7 +28,7 @@ void cache_time()
 
 void setenv_tz()
 {
-    setenv("TZ", timezone().c_str(), /*overwrite*/1);
+    setenv("TZ", timezone().tz.c_str(), /*overwrite*/1);
     tzset();
     cache_time();
 }
@@ -40,17 +40,17 @@ void setup()
     timezone_idx = preferences.getUInt(pref_timezone);
 }
 
-span<const String> all_timezones()
+span<const tz_info> all_timezones()
 {
-    static const String tz[]{
-      "Asia/Istanbul",
-      "Europe/London",
-      "Europe/Stockholm",
+    static const tz_info tz[]{
+      tz_info{"<GMT+3>-3", "Europe/Istanbul"},
+      tz_info{"GMT+0BST-1,M3.5.0/1,M10.5.0/2", "Europe/London"},
+      tz_info{"CET-1CEST,M3.5.0,M10.5.0/3", "Europe/Stockholm"},
     };
-    return span<const String>{tz, 3};
+    return span<const tz_info>{tz, 3};
 }
 
-const String& timezone()
+const tz_info& timezone()
 {
     return all_timezones()[timezone_idx];
 }
@@ -58,8 +58,8 @@ const String& timezone()
 void set_timezone(const String& timezone)
 {
     uint32_t idx = 0;
-    for (const auto& item : all_timezones()) {
-        if (item == timezone) {
+    for (const tz_info& tz : all_timezones()) {
+        if (tz.tz == timezone) {
             if (timezone_idx != idx) {
                 timezone_idx = idx;
                 preferences.putUInt(pref_timezone, timezone_idx);

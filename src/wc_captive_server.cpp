@@ -31,16 +31,18 @@ String fill_page_details()
     page.replace("{wifi_pass}", wordclock::wifi::pass());
 
     const String tz_str = []() {
-        const String& current_timezone = wordclock::time::timezone();
-        const span<const String> timezones = wordclock::time::all_timezones();
+        const time::tz_info& current_timezone = wordclock::time::timezone();
+        const span<const time::tz_info> timezones = wordclock::time::all_timezones();
         String str;
-        for (const String& timezone : timezones) {
-            if (current_timezone == timezone) {
-                str.concat("<option selected>");
+        for (const time::tz_info& timezone : timezones) {
+            str.concat("<option value=\"");
+            str.concat(timezone.tz);
+            if (current_timezone.tz == timezone.tz) {
+                str.concat(R"(" selected>)");
             } else {
-                str.concat("<option>");
+                str.concat(R"(">)");
             }
-            str.concat(timezone);
+            str.concat(timezone.pretty_name);
             str.concat("</option>");
         }
         return str;
@@ -99,7 +101,7 @@ void setup()
         // TZ
         {
             const String& new_tz = request->getParam("tz")->value();
-            if (new_tz != wordclock::time::timezone()) {
+            if (new_tz != wordclock::time::timezone().tz) {
                 ESP_LOGI(captive_log_tag, "timezone changed: %s", new_tz.c_str());
                 wordclock::time::set_timezone(new_tz);
             }

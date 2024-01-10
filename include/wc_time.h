@@ -11,10 +11,15 @@
 
 namespace wordclock { namespace time {
 
+struct tz_info {
+    String tz;
+    String pretty_name;
+};
+
 void setup();
 
-span<const String> all_timezones();
-const String& timezone();
+span<const tz_info> all_timezones();
+const tz_info& timezone();
 void set_timezone(const String& timezone);
 
 void update_from_sntp();
